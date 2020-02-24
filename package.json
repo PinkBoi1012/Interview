@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "expressjs": "^1.0.1",
+    "passport": "^0.4.1",
+    "pug": "^2.0.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}
