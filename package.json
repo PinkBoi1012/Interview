@@ -1,8 +1,15 @@
 {
   "dependencies": {
-    "expressjs": "^1.0.1",
-    "passport": "^0.4.1",
-    "pug": "^2.0.4"
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.15",
+    "mongodb": "^3.5.3",
+    "mongoose": "^5.9.2",
+    "validator": "^12.2.0"
+  },
+  "scripts": {
+    "start": "nodemon --inspect  server.js"
   },
   "devDependencies": {
     "nodemon": "^2.0.2"
