@@ -26,7 +26,7 @@ router.post("/", async function(req, res) {
       });
     } else {
       let totalPriceProduct = req.body.amountProduct * data.priceProduct;
-
+      // Create Order Item
       let orderLists = {
         productID: data._id,
         amountOfEachProduct: req.body.amountProduct,
@@ -42,16 +42,59 @@ router.post("/", async function(req, res) {
       let totals = newOrder.total + req.body.amountProduct * data.priceProduct;
       newOrder.total = totals;
       newOrder.orderList.push(orderLists);
-      res.json(newOrder);
+      newOrder
+        .save()
+        .then(function(order) {
+          res.status(200).json({
+            Message: "New Order is create and have Draft status",
+            order
+          });
+        })
+        .catch(err => {
+          res.status(400).json(err);
+        });
     }
   });
 });
 
-//@route    PUT /api/order/:_id
+//@route    PUT
 //@desc     Update Order at draft status
 //@access   Public
 router.put("/:_id", function(req, res) {
-  //To.. DO
+  //find order by _id
+  orderModel.findById(req.params._id).then(function(order) {
+    if (!order) {
+      return res.status(404).json({ Message: "Order Not Found" });
+    }
+    // find order Item if exit + amount else create new Item
+    let orderItem = order.orderList.id(req.body._id);
+    if (!orderItem) {
+      productModel.findById(req.body.productId).then(function(productInfo) {
+        // Check amout product storage
+        if (productInfo.amountProduct < req.body.amountProduct) {
+          return res.status(400).json({
+            Message: `Product :'${productInfo.productName}' only have '${productInfo.amountProduct}.'}`
+          });
+        }
+
+        let totalPriceProduct =
+          req.body.amountProduct * productInfo.priceProduct;
+        let newOrderItem = {
+          productID: productInfo._id,
+          amountOfEachProduct: req.body.amountProduct,
+          priceProduct: productInfo.priceProduct,
+          totalPriceProduct,
+          nameProduct: productInfo.productName
+        };
+
+        order.orderList.push(newOrderItem);
+        order.total = order.total + totalPriceProduct;
+        console.log(order);
+      });
+    }
+    // if have order Item
+    return res.json(orderItem);
+  });
 });
 
 //@route    PUT /api/order/paid/:_id
