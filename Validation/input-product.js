@@ -7,7 +7,7 @@ module.exports = function validateAddProductInput(data) {
   data.productName = !isEmpty(data.productName) ? data.productName : "";
   data.amountProduct = !isEmpty(data.amountProduct) ? data.amountProduct : "";
   data.priceProduct = !isEmpty(data.priceProduct) ? data.priceProduct : "";
-  data.productCode = !isEmpty(data.productCode) ? data.priceProduct : "";
+  data.productCode = !isEmpty(data.productCode) ? data.productCode : "";
 
   if (Validate.isEmpty(data.productName)) {
     error.productName = "Product name field is require";
