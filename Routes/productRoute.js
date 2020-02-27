@@ -4,15 +4,16 @@ const productModel = require("../Models/productMoldel");
 //import check valid Product
 const validateInputProduct = require("../Validation/input-product");
 
-//@route    POST /api/product/add
+//@route    POST /api/product/
 //@desc     Add new product
 //@access   Public
-router.post("/add", function(req, res) {
+router.post("/", function(req, res) {
   // Check valid input
   const { error, isValid } = validateInputProduct(req.body);
   if (!isValid) {
     return res.status(400).json(error);
   }
+  console.log(req.body.productCodes);
 
   // Find if product is exist
 
@@ -23,12 +24,14 @@ router.post("/add", function(req, res) {
       if (product) {
         return res.status(400).json({ Error: "Product already exist." });
       } else {
+        console.log(req.body.productCode);
         var newProduct = new productModel({
           productName: req.body.productName,
           amountProduct: req.body.amountProduct,
           priceProduct: req.body.priceProduct,
           productCode: req.body.productCode
         });
+
         // Save new Product to Mongo Altat DB
         newProduct
           .save()
