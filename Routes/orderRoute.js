@@ -3,21 +3,10 @@ const router = express.Router();
 const productModel = require("../Models/productMoldel");
 const orderModel = require("../Models/orderModel");
 
-// status: { type: String },
-// amount: { type: Number },
-// orderList: [
-//   { productID: { type: Schema.Types.ObjectId, ref: product } },
-//   { amountOfEachProduct: { type: Number } },
-//   { priceProduct: { type: Number } },
-//   { totalPriceProduct: { type: Number } }
-// ],
-
-// total: { type: Number }
-
 //@route    POST /api/order/
 //@desc     Create Order at draft status
 //@access   Public
-router.post("/", async function(req, res) {
+router.post("/", function(req, res) {
   //Check amout of product more than amount
   productModel.findOne({ _id: req.body.productId }).then(data => {
     if (data.amountProduct < req.body.amountProduct) {
@@ -28,7 +17,7 @@ router.post("/", async function(req, res) {
       let totalPriceProduct = req.body.amountProduct * data.priceProduct;
       // Create Order Item
       let orderLists = {
-        productID: data._id,
+        _id: data._id,
         amountOfEachProduct: req.body.amountProduct,
         priceProduct: data.priceProduct,
         totalPriceProduct,
@@ -57,7 +46,7 @@ router.post("/", async function(req, res) {
   });
 });
 
-//@route    PUT
+//@route    PUT api/order/:_id
 //@desc     Update Order at draft status
 //@access   Public
 router.put("/:_id", function(req, res) {
@@ -66,34 +55,92 @@ router.put("/:_id", function(req, res) {
     if (!order) {
       return res.status(404).json({ Message: "Order Not Found" });
     }
-    // find order Item if exit + amount else create new Item
-    let orderItem = order.orderList.id(req.body._id);
+    // if orderList is empty and amountProduct is -
+    if (order.orderList.length <= 0 && req.body.amountProduct < 0) {
+      return res.status(400).json({ Message: "There are no product in order" });
+    }
+
+    // find order Item if exit + amount and + total price else create new Item and + total price
+    let orderItem = order.orderList.id(req.body.productId);
+    console.log(orderItem);
     if (!orderItem) {
       productModel.findById(req.body.productId).then(function(productInfo) {
         // Check amout product storage
         if (productInfo.amountProduct < req.body.amountProduct) {
           return res.status(400).json({
-            Message: `Product :'${productInfo.productName}' only have '${productInfo.amountProduct}.'}`
+            Message: `Product :'${productInfo.productName}' only have '${productInfo.amountProduct}'.`
           });
         }
 
         let totalPriceProduct =
           req.body.amountProduct * productInfo.priceProduct;
         let newOrderItem = {
-          productID: productInfo._id,
-          amountOfEachProduct: req.body.amountProduct,
-          priceProduct: productInfo.priceProduct,
+          _id: productInfo._id,
+          amountOfEachProduct: parseInt(req.body.amountProduct),
+          priceProduct: parseInt(productInfo.priceProduct),
           totalPriceProduct,
           nameProduct: productInfo.productName
         };
 
         order.orderList.push(newOrderItem);
         order.total = order.total + totalPriceProduct;
-        console.log(order);
+
+        order
+          .save()
+          .then(function(data) {
+            if (data) return res.status(200).json(data);
+            return res.status(400).json({ Message: "Update false" });
+          })
+          .catch(function(err) {
+            return res.status(404).json(err);
+          });
       });
     }
+
     // if have order Item
-    return res.json(orderItem);
+    // Check amout product storage
+    productModel.findById(req.body.productId).then(function(productInfo) {
+      orderItem.amountOfEachProduct =
+        parseInt(orderItem.amountOfEachProduct) +
+        parseInt(req.body.amountProduct);
+      if (productInfo.amountProduct < orderItem.amountOfEachProduct) {
+        return res.status(400).json({
+          Message: `Product :'${productInfo.productName}' only have '${productInfo.amountProduct}'.`
+        });
+      }
+      if (orderItem.amountOfEachProduct == 0) {
+        var indexOrderItem = order.orderList
+          .map(x => x._id)
+          .indexOf(orderItem._id);
+        order.orderList.splice(indexOrderItem, 1);
+        order
+          .save()
+          .then(function(data) {
+            if (data) return res.status(200).json(data);
+            return res.status(400).json({ Message: "Update false" });
+          })
+          .catch(function(err) {
+            return res.status(404).json(err);
+          });
+      } else {
+        orderItem.totalPriceProduct =
+          parseInt(orderItem.totalPriceProduct) +
+          parseInt(req.body.amountProduct) * parseInt(orderItem.priceProduct);
+        order.total =
+          parseInt(order.total) +
+          parseInt(req.body.amountProduct) * parseInt(orderItem.priceProduct);
+
+        order
+          .save()
+          .then(function(data) {
+            if (data) return res.status(200).json(data);
+            return res.status(400).json({ Message: "Update false" });
+          })
+          .catch(function(err) {
+            return res.status(404).json(err);
+          });
+      }
+    });
   });
 });
 
@@ -102,13 +149,50 @@ router.put("/:_id", function(req, res) {
 //@access   Public
 router.put("/paid/:_id", function(req, res) {
   //To.. DO
+  orderModel.findById(req.params._id).then(order => {
+    order.status = "paid";
+    order
+      .save()
+      .then(data => {
+        if (data) {
+          return res.status(200).json({ Message: "Update Success", data });
+        }
+        return res.status(400).json({ Message: "Change Status Fail" });
+      })
+      .catch(err => {
+        return res.status(400).json(err);
+      });
+  });
 });
-//@route    PUT /api/order/:_id
-//@desc     Cancled  order
+//@route    PUT /api/order/cancelled/:_id
+//@desc     Cancelled  order
 //@access   Public
-router.delete("/:_id", function(req, res) {
+router.put("/cancelled/:_id", function(req, res) {
   //To.. DO
+  orderModel.findById(req.params._id).then(order => {
+    order.status = "cancelled";
+    order
+      .save()
+      .then(data => {
+        if (data) {
+          return res.status(200).json({ Message: "Update Success", data });
+        }
+        return res.status(400).json({ Message: "Change Cancel Fail" });
+      })
+      .catch(err => {
+        return res.status(400).json(err);
+      });
+  });
   //  If status = Draft
   //If status = paid
+});
+
+//@route    GET /api/order
+//@desc     Get all order
+//@access   Public
+router.get("/", function(req, res) {
+  orderModel.find().then(data => {
+    return res.status(200).json(data);
+  });
 });
 module.exports = router;
