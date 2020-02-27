@@ -13,7 +13,6 @@ router.post("/", function(req, res) {
   if (!isValid) {
     return res.status(400).json(error);
   }
-  console.log(req.body.productCodes);
 
   // Find if product is exist
 
