@@ -74,7 +74,7 @@ router.put("/:_id", checkDraftStatus, function(req, res) {
 
     // find order Item if exit + amount and + total price else create new Item and + total price
     let orderItem = order.orderList.id(req.body.productId);
-    console.log(orderItem);
+
     if (!orderItem) {
       productModel.findById(req.body.productId).then(function(productInfo) {
         // Check amout product storage
@@ -162,47 +162,67 @@ router.put("/:_id", checkDraftStatus, function(req, res) {
 router.put("/paid/:_id", checkPaidStatus, function(req, res) {
   //To.. DO
   orderModel.findById(req.params._id).then(order => {
-    // checkout and minimus the amount of product
-    console.log(order.orderList);
+    // loop each order Item
+    order.orderList.forEach(function(orderItem) {
+      productModel.findById(orderItem._id).then(function(data) {
+        // pop item if product amount is less than order item amount at that moment
+        if (data.amountProduct < orderItem.amountOfEachProduct) {
+          let itemPop = order.orderList.indexOf(orderItem);
+          order.orderList.splice(itemPop, 1);
+        } else {
+          // if product amount is more than oder item amount, minimus product amount storage and change order   to paid status
+          // minimus  product storage
+          let itemPop = order.orderList.indexOf(orderItem);
 
-    order.status = "paid";
-    order
-      .save()
-      .then(data => {
-        if (data) {
-          return res.status(200).json({ Message: "Update Success", data });
+          productModel.findById(orderItem._id).then(function(item) {
+            item.amountProduct =
+              parseInt(item.amountProduct) -
+              parseInt(order.orderList[itemPop].amountOfEachProduct);
+            // Save product
+            item.save();
+          });
         }
-        return res.status(400).json({ Message: "Change Status Fail" });
-      })
-      .catch(err => {
-        return res.status(400).json(err);
       });
+    });
+    // End foreach loop
+    order.status = "paid";
+    order.save().then(data => {
+      return res.status(200).json(data);
+    });
   });
 });
+
 //@route    PUT /api/order/cancelled/:_id
 //@desc     Cancelled  order
 //@access   Public
 router.put("/cancelled/:_id", checkCancelStatus, function(req, res) {
-  // if cancel + the amount of the product
-  // Check validate
-  const { error, isValid } = validateOrder(req.body);
-  if (!isValid) {
-    return res.status(400).json(error);
-  }
-
+  // if order status is draft => change status to cancel and return
   orderModel.findById(req.params._id).then(order => {
-    order.status = "cancelled";
-    order
-      .save()
-      .then(data => {
-        if (data) {
-          return res.status(200).json({ Message: "Update Success", data });
-        }
-        return res.status(400).json({ Message: "Change Cancel Fail" });
-      })
-      .catch(err => {
-        return res.status(400).json(err);
+    if (order.status === "draft") {
+      order.status = "cancelled";
+      order.save().then(data => {
+        return res.status(200).json(data);
       });
+    }
+    // if order status is paid plus amount order of each item into product amount and change status to cancel
+    // loop each order Item
+    order.orderList.forEach(function(orderItem) {
+      productModel.findById(orderItem._id).then(function(data) {
+        productModel.findById(orderItem._id).then(function(item) {
+          let itemPop = order.orderList.indexOf(orderItem);
+          item.amountProduct =
+            parseInt(item.amountProduct) +
+            parseInt(order.orderList[itemPop].amountOfEachProduct);
+          // Save product
+          item.save();
+        });
+      });
+    });
+    // End foreach loop
+    order.status = "cancelled";
+    order.save().then(data => {
+      return res.status(200).json(data);
+    });
   });
 });
 
