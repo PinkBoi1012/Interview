@@ -9,7 +9,7 @@ const orderModel = new Schema(
     amount: { type: Number },
     orderList: [
       {
-        productID: { type: Schema.Types.ObjectId, ref: "product" },
+        _id: { type: Schema.Types.ObjectId, ref: "product" },
         amountOfEachProduct: { type: Number },
         priceProduct: { type: Number },
         totalPriceProduct: { type: Number },
