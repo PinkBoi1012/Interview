@@ -160,12 +160,11 @@ router.put("/:_id", checkDraftStatus, function(req, res) {
 //@desc     Paid order at paid status
 //@access   Public
 router.put("/paid/:_id", checkPaidStatus, function(req, res) {
-  const { error, isValid } = validateOrder(req.body);
-  if (!isValid) {
-    return res.status(400).json(error);
-  }
   //To.. DO
   orderModel.findById(req.params._id).then(order => {
+    // checkout and minimus the amount of product
+    console.log(order.orderList);
+
     order.status = "paid";
     order
       .save()
@@ -184,12 +183,13 @@ router.put("/paid/:_id", checkPaidStatus, function(req, res) {
 //@desc     Cancelled  order
 //@access   Public
 router.put("/cancelled/:_id", checkCancelStatus, function(req, res) {
+  // if cancel + the amount of the product
   // Check validate
   const { error, isValid } = validateOrder(req.body);
   if (!isValid) {
     return res.status(400).json(error);
   }
-  //To.. DO
+
   orderModel.findById(req.params._id).then(order => {
     order.status = "cancelled";
     order
@@ -204,8 +204,6 @@ router.put("/cancelled/:_id", checkCancelStatus, function(req, res) {
         return res.status(400).json(err);
       });
   });
-  //  If status = Draft
-  //If status = paid
 });
 
 //@route    GET /api/order
