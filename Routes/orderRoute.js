@@ -2,11 +2,19 @@ const express = require("express");
 const router = express.Router();
 const productModel = require("../Models/productMoldel");
 const orderModel = require("../Models/orderModel");
-
+const checkPaidStatus = require("../middlewares/checkStatusPaid");
+const checkDraftStatus = require("../middlewares/checkDraftStatus");
+const checkCancelStatus = require("../middlewares/checkCancelStatus");
+const validateOrder = require("../Validation/input-order-item");
 //@route    POST /api/order/
 //@desc     Create Order at draft status
 //@access   Public
 router.post("/", function(req, res) {
+  const { error, isValid } = validateOrder(req.body);
+  if (!isValid) {
+    return res.status(400).json(error);
+  }
+
   //Check amout of product more than amount
   productModel.findOne({ _id: req.body.productId }).then(data => {
     if (data.amountProduct < req.body.amountProduct) {
@@ -49,7 +57,11 @@ router.post("/", function(req, res) {
 //@route    PUT api/order/:_id
 //@desc     Update Order at draft status
 //@access   Public
-router.put("/:_id", function(req, res) {
+router.put("/:_id", checkDraftStatus, function(req, res) {
+  const { error, isValid } = validateOrder(req.body);
+  if (!isValid) {
+    return res.status(400).json(error);
+  }
   //find order by _id
   orderModel.findById(req.params._id).then(function(order) {
     if (!order) {
@@ -147,7 +159,11 @@ router.put("/:_id", function(req, res) {
 //@route    PUT /api/order/paid/:_id
 //@desc     Paid order at paid status
 //@access   Public
-router.put("/paid/:_id", function(req, res) {
+router.put("/paid/:_id", checkPaidStatus, function(req, res) {
+  const { error, isValid } = validateOrder(req.body);
+  if (!isValid) {
+    return res.status(400).json(error);
+  }
   //To.. DO
   orderModel.findById(req.params._id).then(order => {
     order.status = "paid";
@@ -167,7 +183,12 @@ router.put("/paid/:_id", function(req, res) {
 //@route    PUT /api/order/cancelled/:_id
 //@desc     Cancelled  order
 //@access   Public
-router.put("/cancelled/:_id", function(req, res) {
+router.put("/cancelled/:_id", checkCancelStatus, function(req, res) {
+  // Check validate
+  const { error, isValid } = validateOrder(req.body);
+  if (!isValid) {
+    return res.status(400).json(error);
+  }
   //To.. DO
   orderModel.findById(req.params._id).then(order => {
     order.status = "cancelled";
