@@ -1,3 +1,3 @@
 Interview
 
-Using nodejs expressjs mongoosejs atlas and pugjs to build a basic manager e-commerce api
+Using nodejs expressjs mongoosejs and mongodb atlas  to build a basic manager e-commerce api
