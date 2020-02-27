@@ -5,7 +5,7 @@ const route = app.Router();
 module.exports = function(req, res, next) {
   // Check status of order. if status is draft will move to next or reject
   order.findById(req.params._id).then(function(data) {
-    if (data.status === "draft" || data.status("paid")) {
+    if (data.status === "draft" || data.status === "paid") {
       return next();
     }
     return res
